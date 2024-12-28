@@ -2,6 +2,23 @@
 
 It is based off Ansible. 
 
+## Folder Structure
+
+Running the automation, the server will get to the following folder structure:
+
+```bash
+/home/deploy/
+  └── docker/
+      ├── certbot/
+      │   ├── conf/
+      │   └── www/
+      └── nginx/
+          ├── conf/
+          └── www/
+              └── html/
+
+```
+
 ## Vault Management
 
 ### Encrypt/Decrypt Variables

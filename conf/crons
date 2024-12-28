@@ -1,0 +1,2 @@
+0 */12 * * * docker-compose -f /home/deploy/docker/nginx.compose.yaml run --rm certbot renew >> /var/log/certbot_renew.log 2>&1
+0 */6 * * * docker exec nginx nginx -s reload >> /var/log/nginx_reload.log 2>&1
