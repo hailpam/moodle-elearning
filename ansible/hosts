@@ -1,0 +1,7 @@
+# hosts
+[all]
+srv1
+# srv2
+
+[all:vars]
+docker_compose_version="2.32.1"

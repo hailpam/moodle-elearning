@@ -1,0 +1,98 @@
+
+---
+- name: Configure a remote machine with users and SSH keys
+  hosts: all
+  become: true
+
+  vars_files:
+    # Include the encrypted passwords file
+    - variables.yaml  
+
+  vars:
+    users:
+      - name: pmaresca
+        password: "{{ passwords.pmaresca | password_hash('sha512') }}"
+        public_key: "{{ keys.pmaresca }}"
+      - name: deploy
+        password: "{{ passwords.deploy | password_hash('sha512') }}"
+        public_key: "{{ keys.deploy }}"
+
+  tasks:
+    # 1. Create users, set passwords, and add to sudo group
+    - name: Create users and set passwords
+      user:
+        name: "{{ item.name }}"
+        password: "{{ item.password }}"
+        shell: /bin/bash
+        state: present
+        groups: wheel
+      loop: "{{ users }}"
+
+    # 2. Add public SSH keys for each user
+    - name: Add public SSH keys
+      authorized_key:
+        user: "{{ item.name }}"
+        key: "{{ item.public_key }}"
+      loop: "{{ users }}"
+
+    # 3. Add users to sudoers with no password requirement
+    - name: Configure sudoers for users with no password prompt
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        line: "{{ item.name }} ALL=(ALL) NOPASSWD:ALL"
+      loop: "{{ users }}"
+    
+    # 4. Install Docker CE
+    - name: Install dependencies for Docker installation
+      dnf:
+        name:
+          - yum-utils
+          - device-mapper-persistent-data
+          - lvm2
+        state: present
+
+    # - name: Add Docker repository
+    #   dnf:
+    #     name: "https://download.docker.com/linux/centos/docker-ce.repo"
+    #     state: present
+
+    - name: Add Docker repository
+      get_url:
+        url: "https://download.docker.com/linux/centos/docker-ce.repo"
+        dest: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Install Docker CE
+      dnf:
+        name: docker-ce
+        state: present
+
+    - name: Start and enable Docker service
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    # 5. Install Docker Compose
+    - name: Download Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-{{ ansible_facts['system'] | lower }}-{{ ansible_facts['architecture'] }}"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Verify Docker Compose installation
+      command: /usr/local/bin/docker-compose --version
+      register: result
+      changed_when: false
+
+    - name: Display Docker Compose version
+      debug:
+        var: result.stdout
+    
+    # 6. Add users to the Docker group
+    - name: Add users to the Docker group
+      user:
+        name: "{{ item.name }}"
+        groups: docker
+        append: yes
+      loop: "{{ users }}"

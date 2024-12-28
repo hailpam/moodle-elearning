@@ -1,0 +1,38 @@
+---
+- name: Create folder structure for deploy user
+  hosts: all
+  become: true
+
+  tasks:
+    # 1. Create the main 'docker' folder under the 'deploy' user's home
+    - name: Create docker folder under deploy user's home
+      file:
+        path: "/home/deploy/docker"
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: '0755'
+
+    # 2. Create the nested folders certbot/www, certbot/conf under docker
+    - name: Create certbot/www and certbot/conf directories
+      file:
+        path: "/home/deploy/docker/certbot/{{ item }}"
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: '0755'
+      loop:
+        - www
+        - conf
+
+    # 3. Create the nested folders nginx/www/html, nginx/conf under docker
+    - name: Create nginx/www/html and nginx/conf directories
+      file:
+        path: "/home/deploy/docker/nginx/{{ item }}"
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: '0755'
+      loop:
+        - conf
+        - www/html
