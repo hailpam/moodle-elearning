@@ -16,6 +16,12 @@
       - name: deploy
         password: "{{ passwords.deploy | password_hash('sha512') }}"
         public_key: "{{ keys.deploy }}"
+    tools:
+      - nano
+      - git
+      - wget
+      - unzip
+      - curl
 
   tasks:
     # 1. Create users, set passwords, and add to sudo group
@@ -51,12 +57,7 @@
           - device-mapper-persistent-data
           - lvm2
         state: present
-
-    # - name: Add Docker repository
-    #   dnf:
-    #     name: "https://download.docker.com/linux/centos/docker-ce.repo"
-    #     state: present
-
+    
     - name: Add Docker repository
       get_url:
         url: "https://download.docker.com/linux/centos/docker-ce.repo"
@@ -96,3 +97,10 @@
         groups: docker
         append: yes
       loop: "{{ users }}"
+    
+    # 7. Install tooling
+    - name: Add users to the Docker group
+      dnf:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ tools }}"

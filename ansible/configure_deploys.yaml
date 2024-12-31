@@ -36,3 +36,12 @@
       loop:
         - conf
         - www/html
+    
+    # 4. Create the main 'build' folder under the docker's home
+    - name: Create build folder under deploy docker's home
+      file:
+        path: "/home/deploy/docker/build"
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: '0755'
